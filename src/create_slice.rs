@@ -36,3 +36,5 @@ macro_rules! create_slice {
         }
     };
 }
+
+extern crate paste;
