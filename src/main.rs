@@ -48,6 +48,7 @@ fn main() {
 
     println!("Estado final: {:?}", store.get_state());
 
-    store.dispatch(CounterActions::Incremented);
-    println!("Estado após replace_reducer: {:?}", store.get_state());
+    loop {
+        std::thread::park();
+    }
 }
