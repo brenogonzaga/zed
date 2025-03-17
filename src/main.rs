@@ -1,4 +1,4 @@
-use std::{sync::Mutex, thread::sleep, time::Duration};
+use std::{thread::sleep, time::Duration};
 use zed::prelude::*;
 
 fn sync_work() -> Result<(), String> {
