@@ -1,45 +1,53 @@
-use zed::reducer::Reducer;
-use zed::store::Store;
+use serde::{Deserialize, Serialize};
+use zed::prelude::*;
 
-#[derive(Clone, Debug)]
-struct MyState {
-    counter: i32,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct CounterState {
+    value: i32,
 }
 
-#[derive(Clone, Debug)]
-enum MyAction {
-    Increment,
-    Decrement,
-    SetValue(i32),
-}
-
-struct MyReducer;
-
-impl Reducer<MyState, MyAction> for MyReducer {
-    fn reduce(&self, state: &MyState, action: &MyAction) -> MyState {
-        let mut new_state = state.clone();
+// Aqui, definimos o slice do contador:
+// - `enum_name`: o nome do enum de ações (CounterActions)
+// - `fn_base`: o nome base em snake_case (counter) para gerar os itens: `COUNTER_INITIAL_STATE` e `counter_reducer`
+create_slice! {
+    enum_name: CounterActions,
+    fn_base: counter,
+    state: CounterState,
+    initial_state: CounterState { value: 0 },
+    actions: {
+        Incremented,
+        Decremented,
+        SetValue(i32),
+    },
+    reducer: |state: &mut CounterState, action: &CounterActions| {
         match action {
-            MyAction::Increment => new_state.counter += 1,
-            MyAction::Decrement => new_state.counter -= 1,
-            MyAction::SetValue(val) => new_state.counter = *val,
+            CounterActions::Incremented => {
+                state.value += 1;
+            },
+            CounterActions::Decremented => {
+                state.value -= 1;
+            },
+            CounterActions::SetValue(value) => {
+                state.value = *value;
+            },
         }
-        new_state
     }
 }
 
 fn main() {
-    let initial_state = MyState { counter: 0 };
+    let store = configure_store(COUNTER_INITIAL_STATE, create_reducer(counter_reducer));
 
-    let store = Store::new(initial_state, Box::new(MyReducer));
-
-    store.subscribe(|state| {
+    store.subscribe(|state: &CounterState| {
         println!("Estado atualizado: {:?}", state);
     });
 
-    store.dispatch(MyAction::Increment);
-    store.dispatch(MyAction::Increment);
-    store.dispatch(MyAction::Decrement);
-    store.dispatch(MyAction::SetValue(42));
+    store.dispatch(CounterActions::Incremented);
+    store.dispatch(CounterActions::Incremented);
+    store.dispatch(CounterActions::Decremented);
+    store.dispatch(CounterActions::SetValue(42));
 
     println!("Estado final: {:?}", store.get_state());
+
+    store.dispatch(CounterActions::Incremented);
+    println!("Estado após replace_reducer: {:?}", store.get_state());
 }
