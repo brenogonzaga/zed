@@ -1,34 +1,55 @@
-use serde::{Deserialize, Serialize};
+use std::{sync::Mutex, thread::sleep, time::Duration};
 use zed::prelude::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct CounterState {
-    value: i32,
+fn sync_work() -> Result<(), String> {
+    sleep(Duration::from_secs(2));
+    Ok(())
 }
 
-// Aqui, definimos o slice do contador:
-// - `enum_name`: o nome do enum de ações (CounterActions)
-// - `fn_base`: o nome base em snake_case (counter) para gerar os itens: `COUNTER_INITIAL_STATE` e `counter_reducer`
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct CounterState {
+    pub value: i32,
+    pub is_loading: bool,
+    pub error: Option<String>,
+}
+
 create_slice! {
     enum_name: CounterActions,
     fn_base: counter,
     state: CounterState,
-    initial_state: CounterState { value: 0 },
+    initial_state: CounterState { value: 0, is_loading: false, error: None },
     actions: {
+        StartLoading,
         Incremented,
         Decremented,
         SetValue(i32),
+        SetError(String),
     },
     reducer: |state: &mut CounterState, action: &CounterActions| {
         match action {
+            CounterActions::StartLoading => {
+                state.is_loading = true;
+                state.error = None;
+            },
             CounterActions::Incremented => {
+                state.is_loading = false;
                 state.value += 1;
+                state.error = None;
             },
             CounterActions::Decremented => {
+                state.is_loading = false;
                 state.value -= 1;
+                state.error = None;
             },
-            CounterActions::SetValue(value) => {
-                state.value = *value;
+            CounterActions::SetValue(val) => {
+                state.is_loading = false;
+                state.value = *val;
+                state.error = None;
+            },
+            CounterActions::SetError(err) => {
+                state.is_loading = false;
+                state.error = Some(err.clone());
+
             },
         }
     }
@@ -41,12 +62,14 @@ fn main() {
         println!("Estado atualizado: {:?}", state);
     });
 
-    store.dispatch(CounterActions::Incremented);
-    store.dispatch(CounterActions::Incremented);
-    store.dispatch(CounterActions::Decremented);
-    store.dispatch(CounterActions::SetValue(42));
+    store.dispatch(CounterActions::StartLoading);
 
-    println!("Estado final: {:?}", store.get_state());
+    let result = sync_work();
+
+    match result {
+        Ok(_) => store.dispatch(CounterActions::Incremented),
+        Err(err) => store.dispatch(CounterActions::SetError(err)),
+    }
 
     loop {
         std::thread::park();
