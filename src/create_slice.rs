@@ -12,7 +12,7 @@ macro_rules! create_slice {
         },
         reducer: $reducer:expr
     ) => {
-        paste::paste! {
+        $crate::paste! {
             #[derive(Clone, Debug)]
             pub enum $enum_name {
                 $(
