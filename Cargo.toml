@@ -1,8 +1,12 @@
 [package]
 name = "zed"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2024"
 description = "A simple Zed implementation in Rust"
 license = "MIT"
 
 [dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+
+[features]
+wasm = ["wasm-bindgen"]
