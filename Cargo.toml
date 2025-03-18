@@ -1,6 +1,6 @@
 [package]
 name = "zed"
-version = "0.1.8"
+version = "0.1.11"
 edition = "2024"
 description = "A simple Zed implementation in Rust"
 license = "MIT"
