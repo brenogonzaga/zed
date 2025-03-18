@@ -18,18 +18,20 @@
 Define a state slice with the `create_slice!` macro. For example, to manage a simple counter:
 
 ```rust
-use zed::create_slice;
-use zed::configure_store;
-use zed::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::{thread::sleep, time::Duration};
+use zed::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct CounterState {
-    value: i32,
+pub struct CounterState {
+    pub value: i32,
+    pub is_loading: bool,
+    pub error: Option<String>,
 }
+
 create_slice! {
     enum_name: CounterActions,
-    fn_base: counter, // will generate `COUNTER_INITIAL_STATE` and the `counter_reducer` function
+    fn_base: counter,
     state: CounterState,
     initial_state: CounterState { value: 0, is_loading: false, error: None },
     actions: {
@@ -75,7 +77,12 @@ create_slice! {
 Use `configure_store` along with `create_reducer` to create a store with your slice:
 
 ```rust
-use zed::prelude::*;
+use zed::*;
+
+fn sync_work() -> Result<(), String> {
+    sleep(Duration::from_secs(2));
+    Ok(())
+}
 
 fn main() {
     let store = configure_store(COUNTER_INITIAL_STATE, create_reducer(counter_reducer));

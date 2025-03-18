@@ -1,12 +1,13 @@
+use serde::{Deserialize, Serialize};
 use std::{thread::sleep, time::Duration};
-use zed::prelude::*;
+use zed::*;
 
 fn sync_work() -> Result<(), String> {
     sleep(Duration::from_secs(2));
     Ok(())
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CounterState {
     pub value: i32,
     pub is_loading: bool,
