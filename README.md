@@ -55,7 +55,6 @@ create_slice! {
         Decremented,
         SetValue { value: i32 },
         SetError { error: String },
-
     },
     reducer: |state: &mut CounterState, action: &CounterActions| {
         match action {
@@ -73,7 +72,7 @@ create_slice! {
                 state.value -= 1;
                 state.error = None;
             },
-            CounterActions::SetValue{ value } => {
+            CounterActions::SetValue { value } => {
                 state.is_loading = false;
                 state.value = *value;
                 state.error = None;
@@ -85,13 +84,14 @@ create_slice! {
         }
     }
 }
+
 ```
 
 ---
 
 ### 2. Configuring the Store
 
-Create a centralized store using `configure_store` and `create_reducer` with your slice:
+After creating your slice using the `create_slice!` macro, a helper function (e.g. `counter_store()`) is automatically generated based on the `counter` identifier. Use this helper function to get your configured store.
 
 ```rust
 use zed::*;
@@ -103,10 +103,10 @@ fn sync_work() -> Result<(), String> {
 }
 
 fn main() {
-    let store = configure_store(COUNTER_INITIAL_STATE, create_reducer(counter_reducer));
+    let store = counter_store();
 
     store.subscribe(|state: &CounterState| {
-        println!("State updated: {:?}", state);
+        println!("[Redux] Updated state: {:?}", state);
     });
 
     store.dispatch(CounterActions::StartLoading);

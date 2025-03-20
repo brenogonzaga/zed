@@ -6,7 +6,6 @@ fn sync_work() -> Result<(), String> {
     sleep(Duration::from_secs(2));
     Ok(())
 }
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CounterState {
     pub value: i32,
@@ -25,7 +24,6 @@ create_slice! {
         Decremented,
         SetValue { value: i32 },
         SetError { error: String },
-
     },
     reducer: |state: &mut CounterState, action: &CounterActions| {
         match action {
@@ -43,7 +41,7 @@ create_slice! {
                 state.value -= 1;
                 state.error = None;
             },
-            CounterActions::SetValue{ value } => {
+            CounterActions::SetValue { value } => {
                 state.is_loading = false;
                 state.value = *value;
                 state.error = None;
@@ -59,7 +57,7 @@ create_slice! {
 fn main() {
     println!("=== Redux-like Store Example (Counter) ===");
 
-    let store = configure_store(COUNTER_INITIAL_STATE, create_reducer(counter_reducer));
+    let store = counter_store();
 
     store.subscribe(|state: &CounterState| {
         println!("[Redux] Updated state: {:?}", state);

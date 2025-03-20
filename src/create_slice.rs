@@ -31,6 +31,10 @@ macro_rules! create_slice {
                     )*
                 }
             }
+
+            pub fn [<$base _store>]() -> $crate::store::Store<$state_ty, $enum_name> {
+                $crate::configure_store([<$base:upper _INITIAL_STATE>], $crate::create_reducer([<$base _reducer>]))
+            }
         }
     };
 }
