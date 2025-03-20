@@ -50,29 +50,27 @@ create_slice! {
             CounterActions::SetError(err) => {
                 state.is_loading = false;
                 state.error = Some(err.clone());
-
             },
         }
     }
 }
 
 fn main() {
+    println!("=== Redux-like Store Example (Counter) ===");
+
     let store = configure_store(COUNTER_INITIAL_STATE, create_reducer(counter_reducer));
 
     store.subscribe(|state: &CounterState| {
-        println!("Estado atualizado: {:?}", state);
+        println!("[Redux] Updated state: {:?}", state);
     });
 
     store.dispatch(CounterActions::StartLoading);
 
     let result = sync_work();
-
     match result {
         Ok(_) => store.dispatch(CounterActions::Incremented),
         Err(err) => store.dispatch(CounterActions::SetError(err)),
     }
 
-    loop {
-        std::thread::park();
-    }
+    std::thread::park();
 }

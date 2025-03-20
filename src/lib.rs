@@ -1,38 +1,19 @@
+pub mod capsule;
 pub mod configure_store;
 pub mod create_slice;
+pub mod reactive;
 pub mod reducer;
+pub mod simple_cache;
+pub mod state_mesh;
 pub mod store;
+pub mod timeline;
 
-use crate::reducer::Reducer;
-use std::marker::PhantomData;
-
-pub struct ClosureReducer<State, Action, F>
-where
-    F: Fn(&State, &Action) -> State,
-{
-    pub f: F,
-    _phantom: PhantomData<(State, Action)>,
-}
-
-impl<State, Action, F> Reducer<State, Action> for ClosureReducer<State, Action, F>
-where
-    F: Fn(&State, &Action) -> State,
-{
-    fn reduce(&self, state: &State, action: &Action) -> State {
-        (self.f)(state, action)
-    }
-}
-
-pub fn create_reducer<State, Action, F>(f: F) -> ClosureReducer<State, Action, F>
-where
-    F: Fn(&State, &Action) -> State,
-{
-    ClosureReducer {
-        f,
-        _phantom: PhantomData,
-    }
-}
-
-pub use crate::configure_store::*;
-pub use crate::store::*;
+pub use capsule::{Cache, Capsule};
+pub use configure_store::configure_store;
 pub use paste::paste;
+pub use reactive::ReactiveSystem;
+pub use reducer::{ClosureReducer, Reducer, create_reducer};
+pub use simple_cache::SimpleCache;
+pub use state_mesh::StateNode;
+pub use store::Store;
+pub use timeline::StateManager;

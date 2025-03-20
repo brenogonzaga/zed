@@ -1,9 +1,15 @@
 [package]
 name = "zed"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2024"
-description = "A simple Zed implementation in Rust"
+description = "A minimal, Redux-like state management library for Rust with advanced features."
 license = "MIT"
+repository = "https://github.com/brenogonzaga/zed"
+homepage = "https://github.com/brenogonzaga/zed"
+documentation = "https://docs.rs/zed"
+readme = "README.md"
+keywords = ["state-management", "redux", "rust", "immutable", "flux"]
+categories = ["rust-patterns", "data-structures"]
 
 [dependencies]
 paste = "1.0"
