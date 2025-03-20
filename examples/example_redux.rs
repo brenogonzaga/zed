@@ -23,8 +23,9 @@ create_slice! {
         StartLoading,
         Incremented,
         Decremented,
-        SetValue(i32),
-        SetError(String),
+        SetValue { value: i32 },
+        SetError { error: String },
+
     },
     reducer: |state: &mut CounterState, action: &CounterActions| {
         match action {
@@ -42,14 +43,14 @@ create_slice! {
                 state.value -= 1;
                 state.error = None;
             },
-            CounterActions::SetValue(val) => {
+            CounterActions::SetValue{ value } => {
                 state.is_loading = false;
-                state.value = *val;
+                state.value = *value;
                 state.error = None;
             },
-            CounterActions::SetError(err) => {
+            CounterActions::SetError { error } => {
                 state.is_loading = false;
-                state.error = Some(err.clone());
+                state.error = Some(error.clone());
             },
         }
     }
@@ -69,7 +70,7 @@ fn main() {
     let result = sync_work();
     match result {
         Ok(_) => store.dispatch(CounterActions::Incremented),
-        Err(err) => store.dispatch(CounterActions::SetError(err)),
+        Err(err) => store.dispatch(CounterActions::SetError { error: err }),
     }
 
     std::thread::park();
