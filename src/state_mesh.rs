@@ -29,6 +29,10 @@ impl<T: Clone> StateNode<T> {
         self.connections.insert(other.id.clone(), other);
     }
 
+    pub fn remove_connection(&mut self, id: &NodeId) -> Option<StateNode<T>> {
+        self.connections.remove(id)
+    }
+
     pub fn set_conflict_resolver<F>(&mut self, resolver: F)
     where
         F: 'static + Fn(&mut T, &T) + Send + Sync,
@@ -42,5 +46,15 @@ impl<T: Clone> StateNode<T> {
         } else {
             self.state = remote_state;
         }
+    }
+
+    pub fn propagate_update(&mut self) {
+        for node in self.connections.values_mut() {
+            node.resolve_conflict(self.state.clone());
+        }
+    }
+
+    pub fn merge(&mut self, other: &StateNode<T>) {
+        self.resolve_conflict(other.state.clone());
     }
 }

@@ -21,7 +21,7 @@ fn main() {
         },
     );
 
-    node1.connect(node2);
+    node1.connect(node2.clone());
 
     node1.set_conflict_resolver(|local, remote| {
         local.content = format!("{} {}", local.content, remote.content);
@@ -30,5 +30,15 @@ fn main() {
     node1.resolve_conflict(DocumentState {
         content: "from Mesh".into(),
     });
-    println!("[State Mesh] Node state: {:?}", node1.state);
+
+    node1.propagate_update();
+
+    node1.merge(&node2);
+
+    let removed = node1.remove_connection(&"node2".to_string());
+
+    println!("[State Mesh] Node1 state: {:?}", node1.state);
+    if let Some(removed_node) = removed {
+        println!("[State Mesh] Removed node2 state: {:?}", removed_node.state);
+    }
 }
