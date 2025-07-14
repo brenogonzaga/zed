@@ -60,7 +60,7 @@ fn main() {
     let store = counter_store();
 
     store.subscribe(|state: &CounterState| {
-        println!("[Redux] Updated state: {:?}", state);
+        println!("[Redux] Updated state: {state:?}");
     });
 
     store.dispatch(CounterActions::StartLoading);
@@ -70,6 +70,4 @@ fn main() {
         Ok(_) => store.dispatch(CounterActions::Incremented),
         Err(err) => store.dispatch(CounterActions::SetError { error: err }),
     }
-
-    std::thread::park();
 }

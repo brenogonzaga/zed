@@ -1,40 +1,44 @@
-# Zed
+# Zed - Advanced State Management for Rust
 
-**Zed** is a minimal, Redux-like state management library for Rust—with innovative extensions for advanced use cases. In addition to a centralized store and slice-based state updates (inspired by Redux Toolkit), Zed offers:
+[![Crates.io](https://img.shields.io/crates/v/zed.svg)](https://crates.io/crates/zed)
+[![Documentation](https://docs.rs/zed/badge.svg)](https://docs.rs/zed)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- **Time-Reversible State Management (Timeline)**: Maintain a full history of state changes and “travel back in time” (or branch off) to previous states.
-- **Distributed Granular State (State Mesh)**: Model parts of your state as nodes in a distributed graph to support collaborative applications with intelligent conflict resolution.
-- **Domain Capsules**: Encapsulate state, update logic, and caching in self-contained modules for high modularity and minimal coupling.
-- **Reactive Cascade Trees**: Create reactive systems where actions trigger cascades of state updates via registered callbacks.
+**Zed** is a comprehensive, Redux-inspired state management library for Rust with innovative extensions for advanced use cases. Beyond traditional Redux patterns, Zed provides cutting-edge features for modern Rust applications.
 
-Zed’s design emphasizes immutability, unidirectional data flow, and ease of integration into any Rust application.
+## 🚀 Features
 
-## Features
+### Core Features
 
-- **Centralized Store (Redux-like)**: Manage your entire application state in one place.
-- **Immutable State Updates**: Use reducers to derive a new state from dispatched actions.
-- **Subscribers**: Easily listen for state updates.
-- **Dynamic Reducer Replacement**: Swap out reducers at runtime.
-- **Slice Creation Macro**: The `create_slice!` macro automatically generates an actions enum, initial state constant, and reducer function—cutting down on boilerplate.
-- **Time-Reversible State (Timeline)**: Keep a history of all state changes and support “rewinding” or branching of state.
-- **State Mesh**: Represent parts of your state as interconnected nodes, ideal for collaborative scenarios.
-- **Domain Capsules**: Encapsulate a piece of state with its own logic and caching, promoting modularity.
-- **Reactive Cascade Trees**: Automatically trigger cascaded state updates in response to actions.
-- **Serde Integration**: Easily derive `Serialize`/`Deserialize` on your state for persistence, debugging, or external communication.
+- **🏪 Redux-like Store**: Centralized, predictable state management
+- **📦 Slice Creation**: Automatic boilerplate generation with macros
+- **🔄 Immutable Updates**: Safe state transitions through reducers
+- **👂 Subscribers**: React to state changes in real-time
+- **🔧 Dynamic Reducers**: Hot-swap reducers at runtime
+- **📊 Thread-Safe**: Built for concurrent applications
 
-## Usage
+### Advanced Features
 
-Zed can be used in several ways. Below are examples demonstrating each of its functionalities. (Each example is also provided as a separate file in the `examples/` directory.)
+- **⏰ Timeline**: Time-reversible state with history and branching
+- **🕸️ State Mesh**: Distributed state nodes with conflict resolution
+- **💊 Capsules**: Encapsulated state domains with caching
+- **⚡ Reactive System**: Cascade-triggered reactive updates
+- **🗄️ Persistence**: Serde integration for serialization
 
----
+## 📚 Quick Start
 
-### 1. Creating a Slice (Redux-like)
+Add Zed to your `Cargo.toml`:
 
-Define a state slice with the `create_slice!` macro. For example, to manage a simple counter:
+```toml
+[dependencies]
+zed = "0.1.17"
+serde = { version = "1.0", features = ["derive"] }
+```
+
+### Basic Redux Pattern
 
 ```rust
 use serde::{Deserialize, Serialize};
-use std::{thread::sleep, time::Duration};
 use zed::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -50,289 +54,359 @@ create_slice! {
     state: CounterState,
     initial_state: CounterState { value: 0, is_loading: false, error: None },
     actions: {
-        StartLoading,
-        Incremented,
-        Decremented,
+        Increment,
+        Decrement,
         SetValue { value: i32 },
-        SetError { error: String },
+        Reset,
     },
     reducer: |state: &mut CounterState, action: &CounterActions| {
         match action {
-            CounterActions::StartLoading => {
-                state.is_loading = true;
-                state.error = None;
-            },
-            CounterActions::Incremented => {
-                state.is_loading = false;
+            CounterActions::Increment => {
                 state.value += 1;
+                state.is_loading = false;
                 state.error = None;
             },
-            CounterActions::Decremented => {
-                state.is_loading = false;
+            CounterActions::Decrement => {
                 state.value -= 1;
+                state.is_loading = false;
                 state.error = None;
             },
             CounterActions::SetValue { value } => {
-                state.is_loading = false;
                 state.value = *value;
+                state.is_loading = false;
                 state.error = None;
             },
-            CounterActions::SetError { error } => {
+            CounterActions::Reset => {
+                state.value = 0;
                 state.is_loading = false;
-                state.error = Some(error.clone());
+                state.error = None;
             },
         }
     }
-}
-
-```
-
----
-
-### 2. Configuring the Store
-
-After creating your slice using the `create_slice!` macro, a helper function (e.g. `counter_store()`) is automatically generated based on the `counter` identifier. Use this helper function to get your configured store.
-
-```rust
-use zed::*;
-use std::{thread::sleep, time::Duration};
-
-fn sync_work() -> Result<(), String> {
-    sleep(Duration::from_secs(2));
-    Ok(())
 }
 
 fn main() {
     let store = counter_store();
 
+    // Subscribe to state changes
     store.subscribe(|state: &CounterState| {
-        println!("[Redux] Updated state: {:?}", state);
+        println!("State updated: value = {}", state.value);
     });
 
-    store.dispatch(CounterActions::StartLoading);
-
-    let result = sync_work();
-    match result {
-        Ok(_) => store.dispatch(CounterActions::Incremented),
-        Err(err) => store.dispatch(CounterActions::SetError { error: err }),
-    }
-
-    std::thread::park();
+    // Dispatch actions
+    store.dispatch(CounterActions::Increment);
+    store.dispatch(CounterActions::SetValue { value: 42 });
+    store.dispatch(CounterActions::Reset);
 }
 ```
 
----
+## 📖 Detailed Examples
 
-### 3. Time-Reversible State Management (Timeline)
+### 1. Time Travel with Timeline
 
-The Timeline feature allows you to keep a complete history of state changes and “rewind” or branch from any point, much like a Git commit history.
+Perfect for undo/redo functionality or debugging:
 
 ```rust
-use serde::{Deserialize, Serialize};
+use zed::StateManager;
 use std::any::Any;
-use zed::*;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CounterState {
-    pub value: i32,
-    pub is_loading: bool,
-    pub error: Option<String>,
+#[derive(Clone, Debug)]
+struct AppState {
+    counter: i32,
+    history: Vec<String>,
 }
 
-create_slice! {
-    enum_name: CounterActions,
-    fn_base: counter,
-    state: CounterState,
-    initial_state: CounterState { value: 0, is_loading: false, error: None },
-    actions: {
-        Incremented,
-        Decremented,
-    },
-    reducer: |state: &mut CounterState, action: &CounterActions| {
-        match action {
-            CounterActions::Incremented => state.value += 1,
-            CounterActions::Decremented => state.value -= 1,
-            _ => {}
+fn app_reducer(state: &AppState, action: &dyn Any) -> AppState {
+    if let Some(action) = action.downcast_ref::<&str>() {
+        match *action {
+            "increment" => AppState {
+                counter: state.counter + 1,
+                history: {
+                    let mut h = state.history.clone();
+                    h.push(format!("Incremented to {}", state.counter + 1));
+                    h
+                },
+            },
+            "decrement" => AppState {
+                counter: state.counter - 1,
+                history: {
+                    let mut h = state.history.clone();
+                    h.push(format!("Decremented to {}", state.counter - 1));
+                    h
+                },
+            },
+            _ => state.clone(),
         }
+    } else {
+        state.clone()
     }
 }
 
 fn main() {
-    // The reducer accepts actions as a trait object.
-    let reducer = |state: &CounterState, action: &dyn Any| -> CounterState {
-        if let Some(action) = action.downcast_ref::<CounterActions>() {
-            counter_reducer(state, action)
-        } else {
-            state.clone()
+    let initial = AppState { counter: 0, history: vec![] };
+    let mut timeline = StateManager::new(initial, app_reducer);
+
+    // Build up some history
+    timeline.dispatch("increment");
+    timeline.dispatch("increment");
+    timeline.dispatch("decrement");
+
+    println!("Current: {}", timeline.current_state().counter); // 1
+
+    // Travel back in time
+    timeline.rewind(2);
+    println!("After rewind: {}", timeline.current_state().counter); // 0
+
+    // Create alternative timeline
+    let mut branch = timeline.branch();
+    branch.dispatch("increment");
+    branch.dispatch("increment");
+
+    println!("Original: {}", timeline.current_state().counter); // 0
+    println!("Branch: {}", branch.current_state().counter); // 2
+}
+```
+
+### 2. Distributed State with State Mesh
+
+Ideal for collaborative applications:
+
+```rust
+use zed::StateNode;
+
+#[derive(Clone, Debug, PartialEq)]
+struct DocumentState {
+    content: String,
+    version: u32,
+}
+
+fn main() {
+    let doc1 = DocumentState { content: "Hello".to_string(), version: 1 };
+    let doc2 = DocumentState { content: "Hi".to_string(), version: 2 };
+
+    let mut node1 = StateNode::new("user1".to_string(), doc1);
+    let mut node2 = StateNode::new("user2".to_string(), doc2);
+
+    // Set up conflict resolution (last-write-wins based on version)
+    let resolver = |current: &mut DocumentState, remote: &DocumentState| {
+        if remote.version > current.version {
+            *current = remote.clone();
         }
     };
 
-    let mut timeline = timeline::StateManager::new(COUNTER_INITIAL_STATE, reducer);
+    node1.set_conflict_resolver(resolver);
+    node2.set_conflict_resolver(resolver);
 
-    timeline.dispatch(CounterActions::Incremented);
-    timeline.dispatch(CounterActions::Incremented);
-    timeline.dispatch(CounterActions::Decremented);
+    // Connect nodes
+    node1.connect(node2.clone());
 
-    println!("Current state: {:?}", timeline.current_state());
+    // Simulate conflict resolution
+    let updated_doc = DocumentState { content: "Hello World".to_string(), version: 3 };
+    node1.resolve_conflict(updated_doc);
 
-    timeline.rewind(1);
-    println!("After rewind: {:?}", timeline.current_state());
-
-    let branch = timeline.branch();
-    println!("Branch state: {:?}", branch.current_state());
+    // Propagate to connected nodes
+    node1.propagate_update();
 }
 ```
 
----
+### 3. Reactive Cascades
 
-### 4. Distributed Granular State (State Mesh)
-
-State Mesh models your state as a graph of nodes. This is useful for collaborative applications where different parts of the state must be synchronized and conflicts intelligently resolved.
+Chain reactions to state changes:
 
 ```rust
-use zed::*;
+use zed::ReactiveSystem;
 
 #[derive(Clone, Debug)]
-struct DocumentState {
-    content: String,
+struct GameState {
+    score: i32,
+    level: i32,
+    lives: i32,
+    achievements: Vec<String>,
 }
 
 fn main() {
-    let mut node1 = state_mesh::StateNode::new("node1".to_string(), DocumentState { content: "Hello".into() });
-    let node2 = state_mesh::StateNode::new("node2".to_string(), DocumentState { content: "World".into() });
+    let initial = GameState {
+        score: 0,
+        level: 1,
+        lives: 3,
+        achievements: vec![],
+    };
 
-    node1.connect(node2);
+    let mut system = ReactiveSystem::new(initial);
 
-    // Define a conflict resolver that concatenates the document content.
-    node1.set_conflict_resolver(|local, remote| {
-        local.content = format!("{} {}", local.content, remote.content);
+    // Score increases trigger level checks
+    system.on("score_increase".to_string(), |state: &mut GameState| {
+        state.score += 100;
     });
 
-    node1.resolve_conflict(DocumentState { content: "from Mesh".into() });
-    println!("Document state: {:?}", node1.state);
-}
-```
-
----
-
-### 5. Domain Capsules
-
-Capsules encapsulate state, its update logic, and an optional caching mechanism into a self-contained module, promoting modularity and separation of concerns.
-
-```rust
-use zed::*;
-
-#[derive(Clone, Debug)]
-struct CapsuleCounterState {
-    count: i32,
-}
-
-#[derive(Clone, Debug)]
-enum CapsuleCounterAction {
-    Increment,
-    Decrement,
-}
-
-fn capsule_logic(state: &mut CapsuleCounterState, action: CapsuleCounterAction) {
-    match action {
-        CapsuleCounterAction::Increment => state.count += 1,
-        CapsuleCounterAction::Decrement => state.count -= 1,
-    }
-}
-
-fn main() {
-    let mut capsule = capsule::Capsule::new(CapsuleCounterState { count: 0 })
-        .with_logic(capsule_logic)
-        .with_cache(simple_cache::SimpleCache::new());
-
-    capsule.dispatch(CapsuleCounterAction::Increment);
-    capsule.dispatch(CapsuleCounterAction::Increment);
-    capsule.dispatch(CapsuleCounterAction::Decrement);
-
-    println!("Capsule state: {:?}", capsule.get_state());
-}
-```
-
----
-
-### 6. Reactive Cascade Tree
-
-The Reactive Cascade Tree feature lets you register reactive callbacks that automatically trigger a cascade of state updates when specific actions occur.
-
-```rust
-use zed::*;
-
-#[derive(Clone, Debug)]
-struct ReactiveCounter {
-    value: i32,
-}
-
-fn main() {
-    let mut reactive_system = reactive::ReactiveSystem::new(ReactiveCounter { value: 0 });
-
-    // Register a reaction for the "increment" action.
-    reactive_system.on("increment".to_string(), |state| {
-        state.value += 1;
-        println!("Reactive increment: {}", state.value);
-    });
-
-    // Additional reaction to alert when the value reaches 2.
-    reactive_system.on("increment".to_string(), |state| {
-        if state.value == 2 {
-            println!("Alert: value reached 2!");
+    system.on("score_increase".to_string(), |state: &mut GameState| {
+        if state.score > 0 && state.score % 1000 == 0 {
+            state.level += 1;
+            state.achievements.push(format!("Reached level {}", state.level));
         }
     });
 
-    reactive_system.trigger("increment".to_string());
-    reactive_system.trigger("increment".to_string());
+    // Level up triggers life bonus
+    system.on("level_up".to_string(), |state: &mut GameState| {
+        state.lives += 1;
+        state.achievements.push("Extra life earned!".to_string());
+    });
+
+    // Trigger cascade
+    for _ in 0..10 {
+        system.trigger("score_increase".to_string());
+    }
+
+    println!("Final state: {:?}", system.current_state());
 }
 ```
 
----
+### 4. Encapsulated Domains with Capsules
 
-## API Overview
+Modular state management:
 
-- **Store API:**
+```rust
+use zed::{Capsule, SimpleCache};
 
-  - `Store::new(initial_state, reducer)`: Create a new store.
-  - `store.dispatch(action)`: Dispatch an action to update the state.
-  - `store.subscribe(listener)`: Register a listener that is called on state updates.
-  - `store.get_state()`: Retrieve the current state.
-  - `store.replace_reducer(new_reducer)`: Dynamically replace the store's reducer.
+#[derive(Clone, Debug)]
+struct UserProfile {
+    name: String,
+    email: String,
+    preferences: Vec<String>,
+}
 
-- **Timeline API:**
+#[derive(Clone, Debug)]
+enum UserAction {
+    UpdateName(String),
+    UpdateEmail(String),
+    AddPreference(String),
+    ClearPreferences,
+}
 
-  - `StateManager::new(initial_state, reducer)`: Create a state manager with history.
-  - `state_manager.dispatch(action)`: Dispatch an action and record the change.
-  - `state_manager.rewind(steps)`: Rewind the state by a given number of steps.
-  - `state_manager.branch()`: Branch off the current state history.
-  - `state_manager.current_state()`: Get the current state.
+fn main() {
+    let initial = UserProfile {
+        name: "John".to_string(),
+        email: "john@example.com".to_string(),
+        preferences: vec![],
+    };
 
-- **State Mesh API:**
+    let mut user_capsule = Capsule::new(initial)
+        .with_logic(|state: &mut UserProfile, action: UserAction| {
+            match action {
+                UserAction::UpdateName(name) => state.name = name,
+                UserAction::UpdateEmail(email) => state.email = email,
+                UserAction::AddPreference(pref) => state.preferences.push(pref),
+                UserAction::ClearPreferences => state.preferences.clear(),
+            }
+        })
+        .with_cache(SimpleCache::new());
 
-  - `StateNode::new(id, initial_state)`: Create a new state node.
-  - `node.connect(other)`: Connect another state node.
-  - `node.set_conflict_resolver(resolver)`: Define a custom conflict resolver.
-  - `node.resolve_conflict(remote_state)`: Resolve a conflict with a remote state.
+    user_capsule.dispatch(UserAction::UpdateName("Jane".to_string()));
+    user_capsule.dispatch(UserAction::AddPreference("dark_mode".to_string()));
 
-- **Domain Capsules API:**
+    println!("User profile: {:?}", user_capsule.get_state());
+}
+```
 
-  - `Capsule::new(initial_state)`: Create a new capsule.
-  - `capsule.with_logic(logic)`: Attach domain-specific update logic.
-  - `capsule.with_cache(cache)`: Attach a caching mechanism.
-  - `capsule.dispatch(action)`: Dispatch an action within the capsule.
-  - `capsule.get_state()`: Retrieve the capsule’s current state.
+## 🏗️ Architecture
 
-- **Reactive Cascade Tree API:**
-  - `ReactiveSystem::new(initial_state)`: Create a new reactive system.
-  - `reactive_system.on(action_type, callback)`: Register a callback for a specific action type.
-  - `reactive_system.trigger(action_type)`: Trigger all callbacks associated with an action type.
-  - `reactive_system.current_state()`: Retrieve the current state.
+Zed's architecture is built around several core concepts:
 
-## Contributing
+### Store
 
-Contributions are welcome! If you'd like to help improve Zed, please open an issue or submit a pull request. Suggestions, improvements, and fixes are all appreciated.
+The central state container that holds your application state and manages updates through reducers.
 
-## License
+### Slices
 
-This project is licensed under the MIT License.
+Self-contained units of state with their own actions and reducers, similar to Redux Toolkit slices.
+
+### Timeline
+
+A history-aware state manager that tracks all state changes and supports time travel.
+
+### State Mesh
+
+A distributed state system where state is represented as interconnected nodes.
+
+### Capsules
+
+Encapsulated state domains that combine state, logic, and caching.
+
+### Reactive System
+
+An event-driven system that allows cascading reactions to state changes.
+
+## 🎯 Use Cases
+
+- **Web Applications**: Complex state management with time travel debugging
+- **Games**: Entity systems with reactive behaviors
+- **Collaborative Tools**: Distributed state synchronization
+- **Desktop Apps**: Modular state management with undo/redo
+- **Real-time Systems**: Event-driven state cascades
+
+## 🔧 API Reference
+
+### Store API
+
+```rust
+impl<State, Action> Store<State, Action> {
+    pub fn new(initial_state: State, reducer: Box<dyn Reducer<State, Action>>) -> Self
+    pub fn dispatch(&self, action: Action)
+    pub fn subscribe<F>(&self, f: F) where F: Fn(&State)
+    pub fn get_state(&self) -> State
+    pub fn replace_reducer(&self, new_reducer: Box<dyn Reducer<State, Action>>)
+}
+```
+
+### Timeline API
+
+```rust
+impl<T> StateManager<T> {
+    pub fn new(initial_state: T, reducer: fn(&T, &dyn Any) -> T) -> Self
+    pub fn dispatch<A: 'static + Clone>(&mut self, action: A)
+    pub fn rewind(&mut self, steps: usize)
+    pub fn branch(&self) -> Self
+    pub fn current_state(&self) -> &T
+}
+```
+
+### State Mesh API
+
+```rust
+impl<T> StateNode<T> {
+    pub fn new(id: String, initial_state: T) -> Self
+    pub fn connect(&mut self, other: StateNode<T>)
+    pub fn set_conflict_resolver<F>(&mut self, resolver: F)
+    pub fn resolve_conflict(&mut self, remote_state: T)
+    pub fn propagate_update(&mut self)
+}
+```
+
+## 🚦 Testing
+
+Zed comes with comprehensive tests. Run them with:
+
+```bash
+cargo test
+```
+
+## 📈 Performance
+
+Zed is designed for performance:
+
+- Zero-copy state access where possible
+- Efficient conflict resolution algorithms
+- Minimal memory overhead for state history
+- Thread-safe concurrent operations
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## 📄 License
+
+Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+Inspired by Redux, Redux Toolkit, and modern Rust state management patterns.
