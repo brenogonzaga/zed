@@ -24,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests for large data structures (10k+ items)
 - **CI/CD Pipeline**:
   - GitHub Actions workflow with multi-platform testing (Linux, macOS, Windows)
-  - Code coverage tracking with tarpaulin (target: 75%+)
   - Documentation validation with rustdoc warnings as errors
   - Automated benchmarking on main branch
   - Rust stable and beta channel testing
