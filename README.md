@@ -13,9 +13,10 @@
 - **🏪 Redux-like Store**: Centralized, predictable state management
 - **📦 Slice Creation**: Automatic boilerplate generation with macros
 - **🔄 Immutable Updates**: Safe state transitions through reducers
-- **👂 Subscribers**: React to state changes in real-time
+- **👂 Subscribers**: React to state changes with unsubscribe support
 - **🔧 Dynamic Reducers**: Hot-swap reducers at runtime
 - **📊 Thread-Safe**: Built for concurrent applications
+- **📦 Batch Dispatch**: Efficient batch operations with single notification
 
 ### Advanced Features
 
@@ -31,7 +32,7 @@ Add Zed to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-zed = "0.1.17"
+zed = "0.2.0"
 serde = { version = "1.0", features = ["derive"] }
 ```
 
@@ -88,8 +89,8 @@ create_slice! {
 fn main() {
     let store = counter_store();
 
-    // Subscribe to state changes
-    store.subscribe(|state: &CounterState| {
+    // Subscribe to state changes (returns ID for unsubscription)
+    let subscription_id = store.subscribe(|state: &CounterState| {
         println!("State updated: value = {}", state.value);
     });
 
@@ -97,6 +98,9 @@ fn main() {
     store.dispatch(CounterActions::Increment);
     store.dispatch(CounterActions::SetValue { value: 42 });
     store.dispatch(CounterActions::Reset);
+
+    // Unsubscribe when no longer needed
+    store.unsubscribe(subscription_id);
 }
 ```
 

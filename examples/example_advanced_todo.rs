@@ -112,7 +112,6 @@ create_slice! {
     }
 }
 
-// Helper functions for filtering
 impl TodoState {
     pub fn filtered_items(&self) -> Vec<&Todo> {
         match self.filter {
@@ -131,17 +130,15 @@ impl TodoState {
     }
 }
 
-// Simulate async operations
 fn simulate_load_todos() -> Result<Vec<Todo>, String> {
     thread::sleep(Duration::from_millis(500));
 
-    // Simulate occasional errors (using system time for randomness)
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
 
-    if now % 10 == 0 {
+    if now.is_multiple_of(10) {
         return Err("Network error".to_string());
     }
 
@@ -166,7 +163,6 @@ fn main() {
 
     let store = todo_store();
 
-    // Subscribe to state changes with detailed logging
     store.subscribe(|state: &TodoState| {
         println!("📊 State Update:");
         println!("   Items: {} total", state.items.len());
@@ -180,7 +176,6 @@ fn main() {
         println!();
     });
 
-    // Load initial todos asynchronously
     let store_clone = Arc::new(store);
     let store_for_async = Arc::clone(&store_clone);
 
@@ -196,10 +191,8 @@ fn main() {
         }
     });
 
-    // Wait for async operation
     thread::sleep(Duration::from_millis(600));
 
-    // Demonstrate various operations
     println!("➕ Adding new todos...");
     store_clone.dispatch(TodoActions::AddTodo {
         text: "Master state management".to_string(),
@@ -238,7 +231,6 @@ fn main() {
     println!("🔄 Toggle all remaining todos...");
     store_clone.dispatch(TodoActions::ToggleAll);
 
-    // Final state summary
     let final_state = store_clone.get_state();
     println!("🏁 Final Summary:");
     println!("   Total todos: {}", final_state.items.len());
@@ -247,7 +239,6 @@ fn main() {
         final_state.items.iter().all(|t| t.completed)
     );
 
-    // Demonstrate state serialization
     match serde_json::to_string_pretty(&final_state) {
         Ok(json) => {
             println!("\n📄 Current state as JSON:");

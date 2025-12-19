@@ -1,15 +1,14 @@
-//! # Zed - Advanced State Management for Rust
+//! # Zed - State Management for Rust
 //!
-//! Zed is a comprehensive state management library that provides Redux-like patterns
-//! with advanced features for modern Rust applications.
+//! Redux-inspired state management library with additional features.
 //!
 //! ## Features
 //!
-//! - **Redux-like Store**: Centralized, predictable state management
-//! - **Timeline**: Time-reversible state with history and branching
-//! - **State Mesh**: Distributed state nodes with conflict resolution
-//! - **Capsules**: Encapsulated state domains with caching
-//! - **Reactive System**: Cascade-triggered reactive updates
+//! - Redux-like Store with centralized state management
+//! - Timeline for undo/redo functionality
+//! - State Mesh for distributed state synchronization
+//! - Capsules for encapsulated state domains
+//! - Reactive System for event-driven updates
 //!
 //! ## Quick Start
 //!
@@ -69,4 +68,5 @@ pub use reducer::{ClosureReducer, Reducer, create_reducer};
 pub use simple_cache::SimpleCache;
 pub use state_mesh::StateNode;
 pub use store::Store;
+pub use store::SubscriptionId;
 pub use timeline::StateManager;
